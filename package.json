@@ -1,0 +1,9 @@
+{
+  "name": "api-dsm",
+  "version": "1.0.0",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
