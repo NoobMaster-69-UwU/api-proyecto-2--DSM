@@ -20,9 +20,13 @@ admin.initializeApp({
 const db = admin.firestore();
 const JWT_SECRET = process.env.JWT_SECRET || "super_secret";
 
-// ---------- AUTH ----------
+// ----------------------------------------------------
+//                        AUTH
+// ----------------------------------------------------
 
-// Registro
+//
+// REGISTRO
+//
 app.post("/auth/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -37,6 +41,7 @@ app.post("/auth/register", async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+
     const newUser = {
       username,
       email,
@@ -55,7 +60,9 @@ app.post("/auth/register", async (req, res) => {
   }
 });
 
-// Login
+//
+// LOGIN
+//
 app.post("/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -64,7 +71,8 @@ app.post("/auth/login", async (req, res) => {
       return res.status(400).json({ message: "Faltan campos" });
     }
 
-    const snap = await db.collection("users")
+    const snap = await db
+      .collection("users")
       .where("email", "==", email)
       .get();
 
@@ -89,9 +97,13 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
-// ---------- EVENTS ----------
+// ----------------------------------------------------
+//                       EVENTS
+// ----------------------------------------------------
 
-// Listar eventos
+//
+// LISTAR EVENTOS
+//
 app.get("/events", async (req, res) => {
   try {
     const snap = await db.collection("events").get();
@@ -102,7 +114,9 @@ app.get("/events", async (req, res) => {
   }
 });
 
-// Detalle evento
+//
+// DETALLE EVENTO
+//
 app.get("/events/:id", async (req, res) => {
   try {
     const doc = await db.collection("events").doc(req.params.id).get();
@@ -115,7 +129,38 @@ app.get("/events/:id", async (req, res) => {
   }
 });
 
-// Crear comentario
+//
+// CREAR EVENTO (Nuevo con creatorUid)
+//
+app.post("/events", async (req, res) => {
+  try {
+    const { title, date, location, description, creatorUid } = req.body;
+
+    if (!title || !date || !location || !description || !creatorUid) {
+      return res.status(400).json({ message: "Faltan campos" });
+    }
+
+    const newEvent = {
+      title,
+      date,
+      location,
+      description,
+      creatorUid,
+      createdAt: new Date().toISOString()
+    };
+
+    const ref = await db.collection("events").add(newEvent);
+
+    res.json({ id: ref.id, ...newEvent });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+//
+// CREAR COMENTARIO
+//
 app.post("/events/:id/comments", async (req, res) => {
   try {
     const { uid, comment, rating } = req.body;
@@ -139,7 +184,9 @@ app.post("/events/:id/comments", async (req, res) => {
   }
 });
 
-// Listar comentarios
+//
+// LISTAR COMENTARIOS
+//
 app.get("/events/:id/comments", async (req, res) => {
   try {
     const snap = await db
@@ -149,16 +196,19 @@ app.get("/events/:id/comments", async (req, res) => {
       .get();
 
     const comments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
     res.json(comments);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// ---------- ATTENDANCE ----------
+// ----------------------------------------------------
+//                     ATTENDANCE
+// ----------------------------------------------------
 
-// Confirmar asistencia
+//
+// CONFIRMAR ASISTENCIA
+//
 app.post("/attend/:eventId/confirm", async (req, res) => {
   try {
     const { uid } = req.body;
@@ -182,7 +232,9 @@ app.post("/attend/:eventId/confirm", async (req, res) => {
   }
 });
 
-// Cancelar asistencia
+//
+// CANCELAR ASISTENCIA
+//
 app.post("/attend/:eventId/cancel", async (req, res) => {
   try {
     const { uid } = req.body;
@@ -202,7 +254,9 @@ app.post("/attend/:eventId/cancel", async (req, res) => {
   }
 });
 
-// Listar asistentes
+//
+// LISTAR ASISTENTES
+//
 app.get("/attend/:eventId/attendees", async (req, res) => {
   try {
     const snap = await db
@@ -219,10 +273,15 @@ app.get("/attend/:eventId/attendees", async (req, res) => {
   }
 });
 
-// Root
+// ----------------------------------------------------
+//                       ROOT
+// ----------------------------------------------------
+
 app.get("/", (req, res) => {
   res.json({ message: "API DSM con Firebase funcionando" });
 });
+
+// ----------------------------------------------------
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
